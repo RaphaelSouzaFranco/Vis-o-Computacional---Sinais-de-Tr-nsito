@@ -20,6 +20,16 @@ A solução de IA baseia-se em *Deep Learning* empregando *Transferência de Apr
 
 ## 4. Relato dos Experimentos
 
+### Como Executar e Encontrar os Resultados
+Para gerar os dados, métricas e gráficos necessários para preencher a análise e a tabela abaixo, você deve executar o script `main.py` localizado na raiz do projeto. 
+
+Ele fará o download da base de dados, treinará o modelo constratando épocas e exibirá no terminal, em tempo real, as perdas (`Train_Loss` e `Val_Loss`) curadas além da **Acurácia** e do **F1-Score** calculados ao final do processo. Os artefatos visuais, como a **Matriz de Confusão** (`matriz_confusao.png`), serão gerados e salvos automaticamente dentro da pasta `results/`.
+
+**Comandos para reproduzir cada Experimento da tabela pelo terminal:**
+- **Run#01 (Base):** `python main.py --learning-rate 0.001 --batch-size 32 --epochs 10`
+- **Run#02 (Slow):** `python main.py --learning-rate 0.0005 --batch-size 64 --epochs 20`
+- **Run#03 (Ablação):** `python main.py --learning-rate 0.001 --batch-size 16 --epochs 15`
+
 As métricas logadas em treinamentos precisam compor esta tabela de evidência primária projetada por este repositório:
 
 | Experimento ID | Learning Rate | Batch Size | Epochs | Augmentations (S/N) | Val F1-Score | Acurácia Exata (Val) | Status |
