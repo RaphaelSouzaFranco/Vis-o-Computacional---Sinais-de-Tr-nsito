@@ -1,0 +1,8 @@
+torch
+torchvision
+datasets
+Pillow
+scikit-learn
+matplotlib
+seaborn
+tqdm
