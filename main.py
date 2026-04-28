@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# Importamos nossos módulos baseados na arquitetura limpa (PEP 8)
+# Import dos módulos baseados na arquitetura limpa (PEP 8)
 from src.data_setup import create_dataloaders
 from src.model import get_model
 from src.train import train_model
@@ -32,7 +32,7 @@ def main():
     args = get_args()
     
     print("=" * 60)
-    print(" 🚦 Projeto GTSRB - Reconhecimento de Sinais de Trânsito 🚦")
+    print("Projeto GTSRB - Reconhecimento de Sinais de Trânsito")
     print("=" * 60)
     print(f"[ Configuração ] Épocas={args.epochs} | Batch={args.batch_size} | LR={args.learning_rate} | Workers={args.num_workers}")
 
@@ -53,12 +53,10 @@ def main():
 
     # 3. Construção do Modelo via Transfer Learning (Congelado)
     print("\n>>> ETAPA 2/4: Instanciando Arquitetura Base")
-    # A base de conhecimento do GTSRB contempla ativamente 43 classes categóricas puras (Sinais alemães)
     model = get_model(num_classes=43, freeze_features=True)
     model = model.to(device)
 
     # 4. Definição do Critério de Perda Penal e Algoritmo Otimizador 
-    # Extraímos apenas a ponta da rede (classificador linear) para atualizar com gradient descent.
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()), 
@@ -70,7 +68,7 @@ def main():
     model, history = train_model(
         model=model,
         train_loader=train_loader,
-        val_loader=test_loader, # Usa o split da Hugging Face como validador de early-stopping
+        val_loader=test_loader, 
         criterion=criterion,
         optimizer=optimizer,
         device=device,
@@ -83,9 +81,10 @@ def main():
     evaluate_model(model, test_loader, device=device)
     
     print("\n" + "=" * 60)
-    print("[✓] Processo Concluído Transversalmente com Sucesso.")
-    print("[✓] O classificador treinado foi persistido na raiz do pacote.")
+    print("Processo Concluído Transversalmente com Sucesso.")
+    print("O classificador treinado foi persistido na raiz do pacote.")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     main()

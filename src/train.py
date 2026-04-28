@@ -5,6 +5,7 @@ identificar Overfitting usando a técnica de monitoramento na base de validaçã
 """
 
 import copy
+import os
 import time
 import torch
 from tqdm import tqdm
@@ -105,6 +106,12 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
                 if epoch_acc > best_acc:
                     best_acc = epoch_acc
                     best_model_wts = copy.deepcopy(model.state_dict())
+                    
+                    # Cria o diretório de destino se ele não existir
+                    save_dir = os.path.dirname(save_path)
+                    if save_dir:
+                        os.makedirs(save_dir, exist_ok=True)
+                        
                     torch.save(model.state_dict(), save_path)
                     print(f"[*] NOVO RECORDE de Acurácia Capturado ({best_acc:.4f})! Salvo no HD em '{save_path}'.")
 
