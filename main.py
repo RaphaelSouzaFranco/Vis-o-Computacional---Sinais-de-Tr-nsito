@@ -25,6 +25,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=32, help='Tamanho do lote que transita pela GPU/CPU (default: 32).')
     parser.add_argument('--learning-rate', type=float, default=0.001, help='Taxa de aprendizagem inicial aplicada ao Adam (default: 1e-3).')
     parser.add_argument('--num-workers', type=int, default=2, help='Número de subprocessos em prontidão para os DataLoaders (default: 2).')
+    parser.add_argument('--no-augmentations', action='store_true', help='Desativa o uso de data augmentations no treino.')
     return parser.parse_args()
 
 
@@ -45,7 +46,8 @@ def main():
     try:
         train_loader, test_loader = create_dataloaders(
             batch_size=args.batch_size, 
-            num_workers=args.num_workers
+            num_workers=args.num_workers,
+            use_augmentations=not args.no_augmentations
         )
     except Exception as e:
         print(f"\n[!] Falha fatal capturada durante o setup da Hugging Face API: {e}")

@@ -59,13 +59,14 @@ class GTSRBDataset(Dataset):
         return image, torch.tensor(label, dtype=torch.long)
 
 
-def create_dataloaders(batch_size=BATCH_SIZE, num_workers=2):
+def create_dataloaders(batch_size=BATCH_SIZE, num_workers=2, use_augmentations=True):
     """
     Realiza o download de `tanganke/gtsrb`, aplica split caso não haja divisão feita e gera Dataloaders.
     
     Args:
         batch_size (int): Tamanho do lote.
         num_workers (int): Número de processos paralelos para carregar imagens na CPU.
+        use_augmentations (bool): Se verdadeiro, aplica rotação e color jitter.
         
     Returns:
         tuple: Um par (train_loader, test_loader)
@@ -75,14 +76,23 @@ def create_dataloaders(batch_size=BATCH_SIZE, num_workers=2):
 
     # A normalização utiliza a média e desvio padrão estabelecido do modelo original ImageNet.
     # Aplicaremos transfer learning (MobileNetV2), então isso é mandatório para pesos pre-trained.
-    data_transforms = {
-        'train': transforms.Compose([
+    if use_augmentations:
+        train_transforms = transforms.Compose([
             transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
             transforms.RandomRotation(15),  # Data Augmentation simples de rotação
             transforms.ColorJitter(brightness=0.2, contrast=0.2), # Invariância de iluminação 
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ]),
+        ])
+    else:
+        train_transforms = transforms.Compose([
+            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+
+    data_transforms = {
+        'train': train_transforms,
         'test': transforms.Compose([
             transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
             transforms.ToTensor(),
@@ -105,11 +115,21 @@ def create_dataloaders(batch_size=BATCH_SIZE, num_workers=2):
         test_hf = split['test']
 
     # Instanciamos o custom helper de PyTorch Datasets
-    train_dataset = GTSRBDataset(train_hf, transform=data_transforms['train'])
-    test_dataset = GTSRBDataset(test_hf, transform=data_transforms['test'])
+    train_dataset_full = GTSRBDataset(train_hf, transform=data_transforms['train'])
+    test_dataset_full = GTSRBDataset(test_hf, transform=data_transforms['test'])
 
-    print(f"[+] Conjunto de Treino: {len(train_dataset)} instâncias.")
-    print(f"[+] Conjunto de Teste: {len(test_dataset)} instâncias.")
+    # Para garantir a execução rápida (redução solicitada), usaremos apenas 5% dos dados
+    from torch.utils.data import Subset
+    import random
+    
+    train_indices = random.sample(range(len(train_dataset_full)), int(0.05 * len(train_dataset_full)))
+    test_indices = random.sample(range(len(test_dataset_full)), int(0.05 * len(test_dataset_full)))
+    
+    train_dataset = Subset(train_dataset_full, train_indices)
+    test_dataset = Subset(test_dataset_full, test_indices)
+
+    print(f"[+] Conjunto de Treino (5% Amostra Rápida): {len(train_dataset)} instâncias.")
+    print(f"[+] Conjunto de Teste (5% Amostra Rápida): {len(test_dataset)} instâncias.")
 
     train_loader = DataLoader(
         train_dataset,
