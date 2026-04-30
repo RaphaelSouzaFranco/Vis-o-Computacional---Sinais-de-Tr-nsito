@@ -1,3 +1,9 @@
+* [Versão em Português](#versão-em-português)
+* [English Version](#english-version)
+
+---
+
+<a id="versão-em-português"></a>
 # Projeto de Classificação: GTSRB (Sinais de Trânsito)
 
 ## 1. Descrição do Problema
@@ -51,3 +57,60 @@ Aferindo a `matriz_confusao.png` gerada durante o Run#01, observou-se empiricame
 O *F1-Weighted* obteve ~0.30 frente à Acurácia de ~35%. O *F1-Macro* isolado foi ainda menor (~0.17). Esse gap drástico comprova o efeito da *cauda longa*: as classes menos representadas foram sumariamente ignoradas no batch reduzido, puxando o F1-Macro (que dá peso igual a todas as classes independentemente da frequência) severamente para baixo.
 * **Conclusão Formal:**
 Mecanismos de peso pré-treinados formam um baseline formidável e a pipeline estruturada rodou perfeitamente via script unificado. Trabalhos vindouros devem implementar "Fine-Tuning" utilizando 100% dos dados para maximizar adaptabilidade e estabilizar os escores macro acima dos 90%, além do descongelamento (`unfreeze`) dos blocos residuais finais.
+
+---
+
+<a id="english-version"></a>
+# Classification Project: GTSRB (Traffic Signs)
+
+## 1. Problem Description
+The assertive recognition of Traffic Signs is a vital feature in the development of perception for autonomous vehicles. Failures in discerning between "Stop" and "Speed Limit" signs can result in fatal disasters. This project deals with the challenge of multiclass classification of images in the visible spectrum (RGB), where the Model must analyze lighting variations, focal loss, and dynamic rotations to interpret the correct sign and provide proactive inputs to the vehicle's actuating systems.
+
+## 2. Database Description
+The database used is the **GTSRB** (German Traffic Sign Recognition Benchmark) benchmark. The dataset extracted under the `tanganke/gtsrb` repository through the *Hugging Face Datasets* library interface, has the following essential characteristics:
+- **Number of Classes:** 43 distinct types of highway and urban road signs (focus on Continental Europe and Germany).
+- **Distribution and Structure:** The base is characteristically imbalanced; common signs, such as speed limits, are over-represented, while peculiar warnings have few samples. 
+- **Intrinsic Characteristics:** The raw photos come unpasteurized and in random sizes or proportions. Furthermore, they contain daily noise: compression artifacts, motion blur, day/night conditions, and partial overlaps on the signage, emulating real corrupted vehicle sensors.
+
+## 3. Methodology
+The AI solution is based on *Deep Learning* employing *Transfer Learning*: 
+- **Base CNN Extractor:** The `MobileNetV2` architecture was chosen, properly pre-initialized with its famous weights extracted from the `ImageNet` competition. This network uses a convolutional structure of inverted residual blocks (`Inverted Residuals`), which delivers extremely lightweight latency inference, tolerable for restricted CPU embedded systems. Its entire base was frozen (`requires_grad = False`).
+- **Custom Classifier:** The penultimate and last linear layers were re-mapped and replaced by a Multiclass Dense port for 43 final nodes targeting our dataset. We integrated Dropout (`p=0.4`) acting as systemic regularization in order to prevent quick overfitting on the new micro-knowledge.
+- **Hybrid Pre-Processing:** The mandatory `224x224` pixels were standardized into a tensor. RAM augmentations (`RandomRotation` + `ColorJitter`) are executed, artificially providing new scenarios (imperfect angles, headlights, refracted sun, night) at the algorithm's disposal. Finally, the rigid mean/std pipeline from its official creator base is employed.
+- **Instrumentation and Hyperparameters:**
+  - *Loss Functions:* We mathematically applied `CrossEntropyLoss` for the perfect characteristics for the contained Softmax. 
+  - *Global Optimizer:* `Adam` (Adaptive Moment Estimation) was used to regulate dynamic gradient magnitudes against stagnation in the face of the cost function's error plateau.
+
+## 4. Experiment Report
+
+### How to Run and Find the Results
+To generate the data, metrics, and graphs needed to fill out the analysis and the table below, you must run the `main.py` script located at the root of the project. 
+
+It will download the database, train the model contrasting epochs and display in the terminal, in real-time, the curated losses (`Train_Loss` and `Val_Loss`) as well as the **Accuracy** and **F1-Score** calculated at the end of the process. Visual artifacts, such as the **Confusion Matrix** (`matriz_confusao.png`), will be generated and automatically saved inside the `results/` folder.
+
+**Commands to reproduce each Experiment in the table through the terminal:**
+- **Run#01 (Base):** `python main.py --learning-rate 0.001 --batch-size 32 --epochs 10`
+- **Run#02 (Slow):** `python main.py --learning-rate 0.0005 --batch-size 64 --epochs 20`
+- **Run#03 (Ablation):** `python main.py --learning-rate 0.001 --batch-size 16 --epochs 15`
+
+The metrics logged during training must compose this primary evidence table projected by this repository:
+
+| Experiment ID | Learning Rate | Batch Size | Epochs | Augmentations (Y/N) | Val F1-Score | Exact Accuracy (Val) | Status |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Run#01 (Base)** | 0.001 | 32 | 2 (Sample) | Yes | 0.3082 | 35.18% | Completed (5% sample) |
+| **Run#02 (Slow)** | 0.0005 | 64 | 2 (Sample) | Yes | ~0.3300 | ~37.50% | Completed (5% sample) |
+| **Run#03 (Ablation)**| 0.001 | 16 | 2 (Sample) | No | ~0.2900 | ~34.10% | Completed (5% sample) |
+
+> **Note on Metrics:** To ensure that the execution was completed quickly (in minutes instead of hours on the CPU), the tests were run using only a **5% sample** of the total data volume from Hugging Face and 2 epochs. The Accuracy values around 35% reflect the scarcity of data for generalization, but the full flow occurred successfully.
+
+## 5. Result Analysis and Conclusions
+*(Official Outcome Template - Analyze the output artifacts of the Python module logging the evidence in this space)*
+
+* **Taxonomy and Historical Convergence Curves:**
+We verified through the execution that the base MobileNetV2 architecture assimilates well the initialization with the transformations (`Train_Loss` fell from 3.79 to 2.63 in a few interactions), showing real rapid learning capacity even when frozen.
+* **Prediction Diagnosis and Confusional Matrix:**
+Assessing the `matriz_confusao.png` generated during Run#01, it was empirically observed a tendency for the network to confuse signs that share structural boundaries. Due to under-sampling (5% of the data), the prediction tended to allocate itself in the few majority classes present in the batch, revealing how aggressive the real imbalance of this dataset can be without complete sampling.
+* **Global Metrics Qualification (F1-score & Acc):**
+The *F1-Weighted* obtained ~0.30 against the Accuracy of ~35%. The isolated *F1-Macro* was even lower (~0.17). This drastic gap proves the *long tail* effect: the least represented classes were summarily ignored in the reduced batch, pulling the F1-Macro (which gives equal weight to all classes regardless of frequency) severely downwards.
+* **Formal Conclusion:**
+Pre-trained weight mechanisms form a formidable baseline and the structured pipeline ran perfectly via the unified script. Future works should implement "Fine-Tuning" utilizing 100% of the data to maximize adaptability and stabilize macro scores above 90%, in addition to unfreezing (`unfreeze`) the final residual blocks.
